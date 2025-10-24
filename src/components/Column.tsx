@@ -15,11 +15,6 @@ export const Column: React.FC<Props> = ({ id }) => {
     const [adding, setAdding] = useState(false);
     const [title, setTitle] = useState(col.title);
 
-    const { setNodeRef: setDropRef } = useDroppable({
-        id,
-        data: { type: "column", colId: id },
-    });
-
     // draggable de la columna completa con handle en el header
     const {
         setNodeRef: setDragRef,
@@ -28,6 +23,13 @@ export const Column: React.FC<Props> = ({ id }) => {
         transform: dragTransform,
         isDragging: colDragging,
     } = useDraggable({ id: `col-${id}`, data: { type: "column", colId: id } });
+
+    // droppable del contenedor; se desactiva cuando esta columna es la activa
+    const { setNodeRef: setDropRef } = useDroppable({
+        id,
+        data: { type: "column", colId: id },
+        disabled: colDragging,
+    });
 
     const mergedRef = (el: HTMLElement | null) => {
         setDropRef(el);

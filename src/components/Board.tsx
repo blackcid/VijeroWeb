@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
     DndContext,
     DragEndEvent,
     DragOverEvent,
     PointerSensor,
-    closestCenter,
+    pointerWithin,
     useSensor,
     useSensors,
 } from "@dnd-kit/core";
@@ -17,6 +17,29 @@ const Board: React.FC = () => {
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
+
+    // Posición X del ratón para el umbral de mitad
+    const mouseXRef = useRef<number>(0);
+    useEffect(() => {
+        const onMove = (e: PointerEvent | MouseEvent) => {
+            mouseXRef.current =
+                (e as PointerEvent).clientX ?? (e as MouseEvent).clientX;
+        };
+        window.addEventListener("pointermove", onMove as any, { passive: true });
+        window.addEventListener("mousemove", onMove as any, { passive: true });
+        return () => {
+            window.removeEventListener("pointermove", onMove as any);
+            window.removeEventListener("mousemove", onMove as any);
+        };
+    }, []);
+
+    function getOverHalfX(e: DragOverEvent | DragEndEvent): number | null {
+        const over: any = e.over as any;
+        if (!over?.rect) return null;
+        const { left, width } = over.rect as any; // client coords
+        if (left == null || width == null) return null;
+        return left + width / 2;
+    }
 
     function onDragOver(e: DragOverEvent) {
         const { active, over } = e;
@@ -33,8 +56,16 @@ const Board: React.FC = () => {
                 const dragIndex = columnOrder.indexOf(dragId);
                 const overIndex = columnOrder.indexOf(overId);
                 if (dragIndex === -1 || overIndex === -1) return;
-                const place = dragIndex < overIndex ? "after" : "before";
-                moveColumn(dragId, overId, place);
+
+                const mouseX = mouseXRef.current; // cursor
+                const overHalfX = getOverHalfX(e); // mitad de la columna destino
+                if (mouseX == null || overHalfX == null) return;
+
+                if (dragIndex < overIndex && mouseX > overHalfX) {
+                    moveColumn(dragId, overId, "after");
+                } else if (dragIndex > overIndex && mouseX < overHalfX) {
+                    moveColumn(dragId, overId, "before");
+                }
             }
             return;
         }
@@ -88,7 +119,7 @@ const Board: React.FC = () => {
             </div>
             <DndContext
                 sensors={sensors}
-                collisionDetection={closestCenter}
+                collisionDetection={pointerWithin}
                 onDragOver={onDragOver}
                 onDragEnd={onDragEnd}
             >
