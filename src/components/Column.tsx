@@ -15,12 +15,12 @@ export const Column: React.FC<Props> = ({ id }) => {
     const [adding, setAdding] = useState(false);
     const [title, setTitle] = useState(col.title);
 
-    const { setNodeRef, isOver } = useDroppable({
+    const { setNodeRef: setDropRef } = useDroppable({
         id,
-        data: { type: "column" },
+        data: { type: "column", colId: id },
     });
 
-    // draggable completo de la columna (usamos un handle para mover)
+    // draggable de la columna completa con handle en el header
     const {
         setNodeRef: setDragRef,
         attributes: dragAttrs,
@@ -28,6 +28,11 @@ export const Column: React.FC<Props> = ({ id }) => {
         transform: dragTransform,
         isDragging: colDragging,
     } = useDraggable({ id: `col-${id}`, data: { type: "column", colId: id } });
+
+    const mergedRef = (el: HTMLElement | null) => {
+        setDropRef(el);
+        setDragRef(el as any);
+    };
 
     const dragStyle: React.CSSProperties = dragTransform
         ? {
@@ -38,17 +43,13 @@ export const Column: React.FC<Props> = ({ id }) => {
     return (
         <div
             className="column"
-            ref={setNodeRef}
+            ref={mergedRef}
             style={{
-                ...(isOver
-                    ? { outline: "2px dashed var(--primary)" }
-                    : undefined),
                 ...(dragStyle || {}),
                 ...(colDragging ? { opacity: 0.6 } : {}),
             }}
         >
             <header
-                ref={setDragRef}
                 {...dragListeners}
                 {...dragAttrs}
                 style={{ cursor: "grab" }}

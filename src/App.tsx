@@ -2,6 +2,7 @@ import React from "react";
 import {
     DndContext,
     DragEndEvent,
+    DragOverEvent,
     PointerSensor,
     closestCenter,
     useSensor,
@@ -16,6 +17,35 @@ export default function App() {
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
+    function onDragOver(e: DragOverEvent) {
+        const { active, over } = e;
+        if (!over) return;
+        const a = active.data?.current as any;
+        const o = over.data?.current as any;
+
+        // Reordenar columnas en caliente
+        if (a?.type === "column" && o?.type === "column") {
+            const dragId = String(
+                a.colId ?? String(active.id).replace(/^col-/, "")
+            );
+            const overId = String(o.colId ?? over.id);
+            if (dragId && overId && dragId !== overId) {
+                moveColumn(dragId, overId);
+            }
+            return;
+        }
+
+        // (Opcional) Mover tarjeta a la columna en caliente al pasar por encima
+        if (a?.type === "card" && o?.type === "column") {
+            const cardId = String(a.cardId ?? active.id);
+            const overId = String(o.colId ?? over.id);
+            if (cardId && overId) {
+                // Insertar al final mientras se arrastra por encima
+                moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
+            }
+        }
+    }
+
     function onDragEnd(e: DragEndEvent) {
         const { active, over } = e;
         if (!over) return;
@@ -23,7 +53,6 @@ export default function App() {
         const a = active.data?.current as any;
         const o = over.data?.current as any;
 
-        // Reordenar columnas si se arrastra una columna sobre otra
         if (a?.type === "column" && o?.type === "column") {
             const dragId = String(
                 a.colId ?? String(active.id).replace(/^col-/, "")
@@ -33,7 +62,6 @@ export default function App() {
             return;
         }
 
-        // Mover tarjeta entre columnas
         if (a?.type === "card" && o?.type === "column") {
             const cardId = String(a.cardId ?? active.id);
             const overId = String(o.colId ?? over.id);
@@ -57,6 +85,7 @@ export default function App() {
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
+                onDragOver={onDragOver}
                 onDragEnd={onDragEnd}
             >
                 <div className="columns">
