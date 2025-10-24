@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDroppable } from "@dnd-kit/core";
+import { useDroppable, useDraggable } from "@dnd-kit/core";
 import { useBoard } from "../store";
 import type { Id } from "../types";
 import { CardItem } from "./CardItem";
@@ -15,17 +15,44 @@ export const Column: React.FC<Props> = ({ id }) => {
     const [adding, setAdding] = useState(false);
     const [title, setTitle] = useState(col.title);
 
-    const { setNodeRef, isOver } = useDroppable({ id });
+    const { setNodeRef, isOver } = useDroppable({
+        id,
+        data: { type: "column" },
+    });
+
+    // draggable completo de la columna (usamos un handle para mover)
+    const {
+        setNodeRef: setDragRef,
+        attributes: dragAttrs,
+        listeners: dragListeners,
+        transform: dragTransform,
+        isDragging: colDragging,
+    } = useDraggable({ id: `col-${id}`, data: { type: "column", colId: id } });
+
+    const dragStyle: React.CSSProperties = dragTransform
+        ? {
+              transform: `translate3d(${dragTransform.x}px, ${dragTransform.y}px, 0)`,
+          }
+        : undefined;
 
     return (
         <div
             className="column"
             ref={setNodeRef}
-            style={
-                isOver ? { outline: "2px dashed var(--primary)" } : undefined
-            }
+            style={{
+                ...(isOver
+                    ? { outline: "2px dashed var(--primary)" }
+                    : undefined),
+                ...(dragStyle || {}),
+                ...(colDragging ? { opacity: 0.6 } : {}),
+            }}
         >
-            <header>
+            <header
+                ref={setDragRef}
+                {...dragListeners}
+                {...dragAttrs}
+                style={{ cursor: "grab" }}
+            >
                 <input
                     className="input"
                     value={title}

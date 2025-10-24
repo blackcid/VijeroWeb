@@ -8,7 +8,7 @@ export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
     data,
 }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
-        useDraggable({ id });
+        useDraggable({ id, data: { type: "card", cardId: id } });
     const { updateCard, removeCard } = useBoard();
     const [editing, setEditing] = useState(false);
     const [title, setTitle] = useState(data.title);

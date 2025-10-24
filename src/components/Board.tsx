@@ -11,7 +11,7 @@ import { useBoard } from "../store";
 import { Column } from "./Column";
 
 const Board: React.FC = () => {
-    const { columnOrder, addColumn, moveCard } = useBoard();
+    const { columnOrder, addColumn, moveCard, moveColumn } = useBoard();
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -20,11 +20,23 @@ const Board: React.FC = () => {
     function onDragEnd(e: DragEndEvent) {
         const { active, over } = e;
         if (!over) return;
-        const cardId = String(active.id);
-        const overId = String(over.id);
-        // over.id es el id de la columna donde soltamos
-        if (cardId && overId) {
-            moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
+        const a = active.data?.current as any;
+        const o = over.data?.current as any;
+
+        if (a?.type === "column" && o?.type === "column") {
+            const dragId = String(
+                a.colId ?? String(active.id).replace(/^col-/, "")
+            );
+            const overId = String(o.colId ?? over.id);
+            if (dragId && overId) moveColumn(dragId, overId);
+            return;
+        }
+
+        if (a?.type === "card" && o?.type === "column") {
+            const cardId = String(a.cardId ?? active.id);
+            const overId = String(o.colId ?? over.id);
+            if (cardId && overId)
+                moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
         }
     }
 

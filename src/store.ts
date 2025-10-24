@@ -11,6 +11,7 @@ interface BoardStore extends BoardState {
     updateCard: (id: Id, patch: Partial<Card>) => void;
     removeCard: (id: Id) => void;
     moveCard: (cardId: Id, toColumnId: Id, index: number) => void;
+    moveColumn: (dragId: Id, overId: Id) => void;
 }
 
 const initial = (): BoardState => {
@@ -35,7 +36,7 @@ const creator: StateCreator<BoardStore> = (set, get) => ({
             const newColumns = {
                 ...s.columns,
                 [id]: { id, title, cardIds: [] },
-            };
+            } as Record<Id, Column>;
             const newOrder = [...s.columnOrder, id];
             return { ...s, columns: newColumns, columnOrder: newOrder };
         }),
@@ -47,7 +48,7 @@ const creator: StateCreator<BoardStore> = (set, get) => ({
         set((s) => {
             const col = s.columns[id];
             const { [id]: _removed, ...restCols } = s.columns;
-            const newCards = { ...s.cards };
+            const newCards = { ...s.cards } as Record<Id, Card>;
             if (col) col.cardIds.forEach((cid: Id) => delete newCards[cid]);
             return {
                 columns: restCols,
@@ -109,6 +110,15 @@ const creator: StateCreator<BoardStore> = (set, get) => ({
                     [toColumnId]: { ...to, cardIds: toIds },
                 },
             };
+        }),
+    moveColumn: (dragId: Id, overId: Id) =>
+        set((s) => {
+            if (dragId === overId) return s;
+            const order = s.columnOrder.filter((x) => x !== dragId);
+            const overIndex = order.indexOf(overId);
+            const insertAt = overIndex === -1 ? order.length : overIndex + 1; // insertar DESPUÉS de la columna objetivo
+            order.splice(insertAt, 0, dragId);
+            return { ...s, columnOrder: order };
         }),
 });
 
