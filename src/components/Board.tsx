@@ -29,8 +29,13 @@ const Board: React.FC = () => {
                 a.colId ?? String(active.id).replace(/^col-/, "")
             );
             const overId = String(o.colId ?? over.id);
-            if (dragId && overId && dragId !== overId)
-                moveColumn(dragId, overId);
+            if (dragId && overId && dragId !== overId) {
+                const dragIndex = columnOrder.indexOf(dragId);
+                const overIndex = columnOrder.indexOf(overId);
+                if (dragIndex === -1 || overIndex === -1) return;
+                const place = dragIndex < overIndex ? "after" : "before";
+                moveColumn(dragId, overId, place);
+            }
             return;
         }
 
@@ -53,7 +58,13 @@ const Board: React.FC = () => {
                 a.colId ?? String(active.id).replace(/^col-/, "")
             );
             const overId = String(o.colId ?? over.id);
-            if (dragId && overId) moveColumn(dragId, overId);
+            if (dragId && overId) {
+                const dragIndex = columnOrder.indexOf(dragId);
+                const overIndex = columnOrder.indexOf(overId);
+                if (dragIndex === -1 || overIndex === -1) return;
+                const place = dragIndex < overIndex ? "after" : "before";
+                moveColumn(dragId, overId, place);
+            }
             return;
         }
 

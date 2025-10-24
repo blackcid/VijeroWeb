@@ -23,24 +23,27 @@ export default function App() {
         const a = active.data?.current as any;
         const o = over.data?.current as any;
 
-        // Reordenar columnas en caliente
+        // Reordenar columnas en caliente con dirección
         if (a?.type === "column" && o?.type === "column") {
             const dragId = String(
                 a.colId ?? String(active.id).replace(/^col-/, "")
             );
             const overId = String(o.colId ?? over.id);
             if (dragId && overId && dragId !== overId) {
-                moveColumn(dragId, overId);
+                const dragIndex = columnOrder.indexOf(dragId);
+                const overIndex = columnOrder.indexOf(overId);
+                if (dragIndex === -1 || overIndex === -1) return;
+                const place = dragIndex < overIndex ? "after" : "before";
+                moveColumn(dragId, overId, place);
             }
             return;
         }
 
-        // (Opcional) Mover tarjeta a la columna en caliente al pasar por encima
+        // Mover tarjeta a la columna en caliente al pasar por encima
         if (a?.type === "card" && o?.type === "column") {
             const cardId = String(a.cardId ?? active.id);
             const overId = String(o.colId ?? over.id);
             if (cardId && overId) {
-                // Insertar al final mientras se arrastra por encima
                 moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
             }
         }
@@ -58,7 +61,13 @@ export default function App() {
                 a.colId ?? String(active.id).replace(/^col-/, "")
             );
             const overId = String(o.colId ?? over.id);
-            if (dragId && overId) moveColumn(dragId, overId);
+            if (dragId && overId) {
+                const dragIndex = columnOrder.indexOf(dragId);
+                const overIndex = columnOrder.indexOf(overId);
+                if (dragIndex === -1 || overIndex === -1) return;
+                const place = dragIndex < overIndex ? "after" : "before";
+                moveColumn(dragId, overId, place);
+            }
             return;
         }
 

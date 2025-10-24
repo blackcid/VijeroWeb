@@ -11,7 +11,7 @@ interface BoardStore extends BoardState {
     updateCard: (id: Id, patch: Partial<Card>) => void;
     removeCard: (id: Id) => void;
     moveCard: (cardId: Id, toColumnId: Id, index: number) => void;
-    moveColumn: (dragId: Id, overId: Id) => void;
+    moveColumn: (dragId: Id, overId: Id, place?: "before" | "after") => void;
 }
 
 const initial = (): BoardState => {
@@ -111,12 +111,13 @@ const creator: StateCreator<BoardStore> = (set, get) => ({
                 },
             };
         }),
-    moveColumn: (dragId: Id, overId: Id) =>
+    moveColumn: (dragId: Id, overId: Id, place: "before" | "after" = "after") =>
         set((s) => {
             if (dragId === overId) return s;
             const order = s.columnOrder.filter((x) => x !== dragId);
             const overIndex = order.indexOf(overId);
-            const insertAt = overIndex === -1 ? order.length : overIndex + 1; // insertar DESPUÉS de la columna objetivo
+            if (overIndex === -1) return s;
+            const insertAt = place === "after" ? overIndex + 1 : overIndex;
             order.splice(insertAt, 0, dragId);
             return { ...s, columnOrder: order };
         }),
