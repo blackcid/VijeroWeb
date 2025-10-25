@@ -4,6 +4,8 @@ import { nanoid } from "nanoid";
 import type { BoardState, Card, Column, Id } from "./types";
 
 interface BoardStore extends BoardState {
+    backgroundUrl?: string;
+    setBackground: (url?: string) => void;
     addColumn: (title: string) => void;
     renameColumn: (id: Id, title: string) => void;
     removeColumn: (id: Id) => void;
@@ -14,7 +16,7 @@ interface BoardStore extends BoardState {
     moveColumn: (dragId: Id, overId: Id, place?: "before" | "after") => void;
 }
 
-const initial = (): BoardState => {
+const initial = (): BoardState & { backgroundUrl?: string } => {
     const c1: Column = { id: nanoid(6), title: "Por hacer", cardIds: [] };
     const c2: Column = { id: nanoid(6), title: "En progreso", cardIds: [] };
     const c3: Column = { id: nanoid(6), title: "Hecho", cardIds: [] };
@@ -25,11 +27,13 @@ const initial = (): BoardState => {
         columns: { [c1.id]: c1, [c2.id]: c2, [c3.id]: c3 },
         cards: { [t1.id]: t1, [t2.id]: t2 },
         columnOrder: [c1.id, c2.id, c3.id],
+        backgroundUrl: undefined,
     };
 };
 
 const creator: StateCreator<BoardStore> = (set, get) => ({
     ...initial(),
+    setBackground: (url?: string) => set(() => ({ backgroundUrl: url })),
     addColumn: (title: string) =>
         set((s) => {
             const id = nanoid(6);

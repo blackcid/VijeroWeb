@@ -227,3 +227,25 @@ textarea {
   color: var(--muted);
   font-size: 0.75rem;
 }
+
+// Topbar menu
+.menu {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: $radius;
+  padding: $space-xs;
+  min-width: 12rem;
+}
+.menu .text-button {
+  width: 100%;
+  text-align: left;
+  padding: $space-xs $space-sm;
+}
+.header .icon-btn {
+  line-height: 1;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
