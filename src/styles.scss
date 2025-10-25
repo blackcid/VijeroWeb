@@ -12,6 +12,12 @@ $panel-color: #16181d;
 $border-color: #2a2f3a;
 $panel-50: rgba($panel-color, 0.5);
 
+// Glass tokens
+$glass-bg: rgba(0, 0, 0, 0.4);
+$glass-border: rgba(255, 255, 255, 0.25);
+$glass-shadow: 0 1px 8px rgba(0, 0, 0, 0.37);
+$glass-blur: 4px;//12px;
+
 :root {
     --bg: #0b0c10;
     --panel: #16181d;
@@ -54,7 +60,7 @@ button, input, textarea {
   align-items: center;
   gap: $space-sm;
   padding: $space-sm $space-md;
-  background: $panel-50; // 50% transparent topbar
+  background: $panel-50;
   position: sticky;
   top: 0;
   z-index: 5;
@@ -78,36 +84,58 @@ button, input, textarea {
 }
 
 .column {
-    background: $panel-50; // 50% transparent column bg
-    border-radius: $radius;
-    min-width: $col-width;
-    width: $col-width;
+  position: relative;
+  overflow: hidden;
+  background: $glass-bg; // glass background
+  border: 1px solid $glass-border; // subtle glass border
+  border-radius: $radius;
+  min-width: $col-width;
+  width: $col-width;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  flex: 0 0 auto;
+  box-shadow: $glass-shadow;
+  backdrop-filter: blur($glass-blur) saturate(120%);
+  -webkit-backdrop-filter: blur($glass-blur) saturate(120%);
+
+  // soft highlight overlay
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.06) 40%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    border-radius: inherit;
+    mix-blend-mode: screen;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $space-2 $space-sm;
+    border-bottom: none;
+    cursor: grab;
+
+    h3 {
+      margin: $space-0;
+      font-size: 0.875rem;
+    }
+  }
+
+  .list {
+    padding: $space-2;
     display: flex;
     flex-direction: column;
-    max-height: 80vh;
-    flex: 0 0 auto;
-
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: $space-2 $space-sm;
-        border-bottom: none;
-        cursor: grab;
-
-        h3 {
-            margin: $space-0;
-            font-size: 0.875rem;
-        }
-    }
-
-    .list {
-        padding: $space-2;
-        display: flex;
-        flex-direction: column;
-        gap: $space-2;
-        overflow: auto;
-    }
+    gap: $space-2;
+    overflow: auto;
+  }
 }
 
 .column.is-dragging {
@@ -119,8 +147,8 @@ button, input, textarea {
   width: $col-width;
   height: 3rem;
   align-self: flex-start;
-  background: $panel-50; // match columns background
-  border:none;
+  background: #0000001d; // match glass bg
+  border: none; // match glass border styling
   border-radius: $radius;
   color: #fff;
   cursor: pointer;

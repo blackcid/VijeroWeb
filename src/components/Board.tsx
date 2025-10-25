@@ -171,7 +171,7 @@ const Board: React.FC = () => {
                         <Column key={cid} id={cid} index={0} />
                     ))}
                     <button
-                        className="column add-column"
+                        className="add-column"
                         onClick={() => addColumn("Nueva columna")}
                     >
                         + Add column

@@ -25,7 +25,7 @@ export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
             {...attributes}
         >
             <div>
-                <h4 className="card-title">{data.title}</h4>
+                <span className="card-title">{data.title}</span>
             </div>
         </div>
     );
