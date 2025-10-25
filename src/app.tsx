@@ -5,18 +5,29 @@ import {
     DragOverEvent,
     DragMoveEvent,
     PointerSensor,
-    pointerWithin,
     useSensor,
     useSensors,
     DragOverlay,
+    pointerWithin as basePointerWithin,
 } from "@dnd-kit/core";
 import {
     SortableContext,
     horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import type { CollisionDetection } from "@dnd-kit/core";
 import { useBoard } from "./store";
 import { Column } from "./components/column/column";
 import { OverlayRail } from "./components/column/overlay-rail";
+
+// Collision detection that prefers overlay droppables when present
+const overlayFirst: CollisionDetection = (args) => {
+    const overlays = args.droppableContainers.filter(
+        (c) => (c.data as any)?.current?.type === "overlay"
+    );
+    const useSet = overlays.length ? overlays : args.droppableContainers;
+    // Call pointerWithin over the chosen set
+    return basePointerWithin({ ...args, droppableContainers: useSet });
+};
 
 export default function App() {
     const { columnOrder, addColumn, moveCard, moveColumn } = useBoard();
@@ -60,6 +71,7 @@ export default function App() {
         setActiveColId(null);
     }
 
+    // Reorder using overlays + half-threshold only when over overlay
     function reorderByHalfThreshold(
         e: DragMoveEvent | DragOverEvent | DragEndEvent
     ) {
@@ -67,31 +79,20 @@ export default function App() {
         if (!over) return;
         const a = active.data?.current as any;
         const o = over.data?.current as any;
-        // Accept overlay or column as target; prefer overlay semantics
-        const isOverlay = o?.type === "overlay";
-        const isColumnTarget = o?.type === "column";
-        if (!(a?.type === "column" && (isOverlay || isColumnTarget))) return;
+        if (!(a?.type === "column" && o?.type === "overlay")) return; // only overlays trigger reorder
 
         const dragId = String(a.colId ?? String(active.id).replace(/^col-/, ""));
         const currentIndex = columnOrder.indexOf(dragId);
         if (!dragId || currentIndex === -1) return;
 
-        // Determine target index and half from the "over"
-        let targetIndex: number;
-        if (isOverlay) {
-            targetIndex = Number(o.index ?? String(over.id).replace(/^ov-/, ""));
-        } else {
-            // column target: map to its index
-            const overId = String(o.colId ?? over.id);
-            targetIndex = columnOrder.indexOf(overId);
-        }
+        const targetIndex = Number(o.index ?? String(over.id).replace(/^ov-/, ""));
         if (Number.isNaN(targetIndex) || targetIndex < 0) return;
 
         const half = getHalfXFromOver(e);
         const mouseX = mouseXRef.current;
         if (half == null || mouseX == null) return;
 
-        if (isOverlay && targetIndex >= columnOrder.length) {
+        if (targetIndex >= columnOrder.length) {
             // Spacer overlay at the end: move to last only after crossing its half
             if (currentIndex !== columnOrder.length - 1 && mouseX > half) {
                 const lastId = columnOrder[columnOrder.length - 1];
@@ -137,6 +138,7 @@ export default function App() {
     const activeColumn = useMemo(() => {
         if (!activeColId) return null;
         return <Column id={activeColId} index={0} />;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeColId]);
 
     return (
@@ -152,7 +154,7 @@ export default function App() {
             </header>
             <DndContext
                 sensors={sensors}
-                collisionDetection={pointerWithin}
+                collisionDetection={overlayFirst}
                 onDragStart={onDragStart}
                 onDragCancel={onDragCancel}
                 onDragMove={onDragMove}
