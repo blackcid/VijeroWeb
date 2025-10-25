@@ -6,10 +6,11 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 interface Props {
   id: Id;
+  provideListEl?: (id: Id, el: HTMLDivElement | null) => void;
 }
 
 // Renders the column content: card list and add-card form
-export const ColumnContent: React.FC<Props> = ({ id }) => {
+export const ColumnContent: React.FC<Props> = ({ id, provideListEl }) => {
   const { columns, cards, addCard } = useBoard();
   const col = columns[id];
   const [adding, setAdding] = useState(false);
@@ -17,7 +18,7 @@ export const ColumnContent: React.FC<Props> = ({ id }) => {
   return (
     <>
       <SortableContext items={col.cardIds} strategy={verticalListSortingStrategy}>
-        <div className="list">
+        <div className="list" ref={(el) => provideListEl?.(id, el)}>
           {col.cardIds.map((cid) => (
             <CardItem key={cid} id={cid} data={cards[cid]} columnId={id} />
           ))}

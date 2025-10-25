@@ -75,6 +75,27 @@ const Board: React.FC = () => {
   // Overlays state
   const [activeColId, setActiveColId] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  // Track list DOM nodes to allow height locking during cross-column drags
+  const listElsRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const lockedListsRef = useRef<Set<string>>(new Set());
+  const provideListEl = (id: string, el: HTMLDivElement | null) => {
+    listElsRef.current[id] = el;
+  };
+  const lockList = (colId: string) => {
+    if (lockedListsRef.current.has(colId)) return;
+    const el = listElsRef.current[colId];
+    if (!el) return;
+    const h = el.getBoundingClientRect().height;
+    el.style.minHeight = `${h}px`;
+    lockedListsRef.current.add(colId);
+  };
+  const unlockAllLists = () => {
+    lockedListsRef.current.forEach((colId) => {
+      const el = listElsRef.current[colId];
+      if (el) el.style.minHeight = "";
+    });
+    lockedListsRef.current.clear();
+  };
 
   function onDragStart(e: DragStartEvent) {
     const a = e.active.data.current as { type?: string; colId?: UniqueIdentifier; cardId?: UniqueIdentifier; columnId?: UniqueIdentifier };
@@ -87,6 +108,7 @@ const Board: React.FC = () => {
     setActiveColId(null);
     setActiveCardId(null);
     lastHoverRef.current = null;
+    unlockAllLists();
   }
 
   // Column reordering with overlays + half-threshold
@@ -174,6 +196,7 @@ const Board: React.FC = () => {
       if (!toCol) return;
       if (currentColId && currentColId !== toColId) {
         // First time entering another column by hovering a card: just move to that column (append)
+        lockList(currentColId);
         insertAt = Number.MAX_SAFE_INTEGER;
       } else {
         // Already in this column: precise reordering before the target card
@@ -186,11 +209,13 @@ const Board: React.FC = () => {
       }
     } else if (o?.type === "column") {
       toColId = String(o.colId ?? over.id);
+      if (currentColId && currentColId !== toColId) lockList(currentColId);
       insertAt = Number.MAX_SAFE_INTEGER;
     } else if (o?.type === "overlay") {
       const idx = Number(o.index ?? String(over.id).replace(/^ov-/, ""));
       const toIdx = Math.min(idx, columnOrder.length - 1);
       toColId = columnOrder[toIdx];
+      if (currentColId && currentColId !== toColId) lockList(currentColId);
       insertAt = Number.MAX_SAFE_INTEGER;
     } else {
       return;
@@ -259,6 +284,7 @@ const Board: React.FC = () => {
     scheduledMoveRef.current = null;
     // Columns final placement if needed
     reorderByHalfThreshold(e);
+    unlockAllLists();
 
     // Cards: move on drop (within or between columns)
     const a = e.active.data.current as {
@@ -338,7 +364,7 @@ const Board: React.FC = () => {
         <div className="columns">
           <OverlayRail />
           {columnOrder.map((cid) => (
-            <Column key={cid} id={cid} index={0} />
+            <Column key={cid} id={cid} index={0} provideListEl={provideListEl} />
           ))}
           <button className="add-column" onClick={() => addColumn("Nueva columna")}>
             + Add column

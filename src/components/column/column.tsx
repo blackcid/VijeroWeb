@@ -8,9 +8,10 @@ import { ColumnContent } from "./column-content";
 interface Props {
     id: Id;
     index: number;
+    provideListEl?: (id: Id, el: HTMLDivElement | null) => void;
 }
 
-export const Column: React.FC<Props> = ({ id }) => {
+export const Column: React.FC<Props> = ({ id, provideListEl }) => {
     const { columns, renameColumn, removeColumn } = useBoard();
     const col = columns[id];
     const [title, setTitle] = useState(col.title);
@@ -56,7 +57,7 @@ export const Column: React.FC<Props> = ({ id }) => {
                     ✕
                 </button>
             </header>
-            <ColumnContent id={id} />
+            <ColumnContent id={id} provideListEl={provideListEl} />
         </div>
     );
 };
