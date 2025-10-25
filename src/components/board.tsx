@@ -134,6 +134,9 @@ const Board: React.FC = () => {
 
   // Keep last hover to avoid redundant moves
   const lastHoverRef = useRef<{ cardId: string; toColId: string; insertAt: number } | null>(null);
+  // Schedule moves to next frame to avoid deep sync update loops
+  const pendingRaf = useRef<number | null>(null);
+  const scheduledMoveRef = useRef<{ cardId: string; toColId: string; insertAt: number } | null>(null);
 
   function handleCardHover(e: DragOverEvent | DragMoveEvent) {
     const active = e.active;
@@ -147,7 +150,7 @@ const Board: React.FC = () => {
     } | undefined;
     if (!a || a.type !== "card") return;
 
-    const cardId = String(a.cardId ?? active.id);
+    const cardId = String(a.cardId ?? e.active.id);
     if (!cardId) return;
 
     const o = over.data?.current as {
@@ -192,14 +195,43 @@ const Board: React.FC = () => {
 
     if (!toColId) return;
 
-    const last = lastHoverRef.current;
-    if (last && last.cardId === cardId && last.toColId === toColId && last.insertAt === insertAt) {
-      return; // already moved to this position
+    // Normalize desired insert index (append if MAX)
+    const desiredInsert =
+      insertAt === Number.MAX_SAFE_INTEGER
+        ? (cols[toColId]?.cardIds?.length ?? 0)
+        : Math.max(0, Math.min(insertAt, cols[toColId]?.cardIds?.length ?? 0));
+
+    // If card is already present in the target column at the desired position, skip move
+    const alreadyIndex = cols[toColId]?.cardIds?.indexOf(cardId) ?? -1;
+    if (alreadyIndex !== -1 && alreadyIndex === desiredInsert) {
+      // update lastHoverRef so we don't attempt again repeatedly
+      lastHoverRef.current = { cardId, toColId, insertAt: desiredInsert };
+      return;
     }
 
-    // perform move so dragged element appears within target column while dragging
-    moveCard(cardId, toColId, insertAt);
-    lastHoverRef.current = { cardId, toColId, insertAt };
+    const last = lastHoverRef.current;
+    if (last && last.cardId === cardId && last.toColId === toColId && last.insertAt === desiredInsert) {
+      return; // already moved to this position recently
+    }
+
+    const scheduled = scheduledMoveRef.current;
+    if (scheduled && scheduled.cardId === cardId && scheduled.toColId === toColId && scheduled.insertAt === desiredInsert) {
+      return; // move already scheduled
+    }
+
+    if (pendingRaf.current != null) {
+      cancelAnimationFrame(pendingRaf.current);
+      pendingRaf.current = null;
+    }
+    scheduledMoveRef.current = { cardId, toColId, insertAt: desiredInsert };
+    pendingRaf.current = requestAnimationFrame(() => {
+      const s = scheduledMoveRef.current;
+      if (!s) return;
+      moveCard(s.cardId, s.toColId, s.insertAt);
+      lastHoverRef.current = s;
+      scheduledMoveRef.current = null;
+      pendingRaf.current = null;
+    });
   }
 
   function onDragOver(e: DragOverEvent) {
@@ -217,6 +249,11 @@ const Board: React.FC = () => {
     setActiveColId(null);
     setActiveCardId(null);
     lastHoverRef.current = null;
+    if (pendingRaf.current != null) {
+      cancelAnimationFrame(pendingRaf.current);
+      pendingRaf.current = null;
+    }
+    scheduledMoveRef.current = null;
     // Columns final placement if needed
     reorderByHalfThreshold(e);
 
@@ -246,6 +283,10 @@ const Board: React.FC = () => {
       if (!toColId || !targetCardId) return;
       const targetIdx = cols[toColId].cardIds.indexOf(targetCardId);
       const insertAt = targetIdx >= 0 ? targetIdx : cols[toColId].cardIds.length;
+      // avoid redundant move
+      const desiredInsert = insertAt;
+      const alreadyIndex = cols[toColId].cardIds.indexOf(cardId);
+      if (alreadyIndex === desiredInsert) return;
       moveCard(cardId, toColId, insertAt);
       return;
     }
