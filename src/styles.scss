@@ -7,6 +7,12 @@ $space-md: 1rem; // 16px
 $radius: 0.75rem; // 12px unified radius
 $col-width: 17.5rem; // 280px
 
+// Color tokens (SCSS)
+$panel-color: #16181d;
+$border-color: #2a2f3a;
+$panel-50: rgba($panel-color, 0.5);
+$border-50: rgba($border-color, 0.5);
+
 :root {
   --bg: #0b0c10;
   --panel: #16181d;
@@ -53,8 +59,8 @@ textarea {
   align-items: center;
   gap: $space-sm;
   padding: $space-sm $space-md;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  background: $panel-50; // 50% transparent topbar
+  border-bottom: 1px solid $border-50; // 50% transparent border
   position: sticky;
   top: 0;
   z-index: 5;
@@ -78,19 +84,19 @@ textarea {
 }
 
 .column {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: $panel-50; // 50% transparent column bg
+  border: 1px solid $border-50; // 50% transparent column border
   border-radius: $radius;
   min-width: $col-width;
   width: $col-width;
   display: flex;
   flex-direction: column;
   max-height: 80vh;
-  flex: 0 0 auto; // static flex moved from inline
+  flex: 0 0 auto;
 }
 
 .column.is-dragging {
-  visibility: hidden; // hide original while DragOverlay shows clone
+  visibility: hidden;
 }
 
 .column header {
@@ -98,9 +104,8 @@ textarea {
   justify-content: space-between;
   align-items: center;
   padding: $space-2 $space-sm;
-  // removed bottom divider between header and cards
   border-bottom: none;
-  cursor: grab; // moved from inline
+  cursor: grab;
 }
 
 .column header h3 {
@@ -121,9 +126,8 @@ textarea {
   width: $col-width;
   height: 3rem;
   align-self: flex-start;
-  background: rgba(0, 0, 0, 0.5); // semi-transparent white
-  //border: 1px dashed var(--border);
-  border:none;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
   border-radius: $radius;
   color: #fff;
   cursor: pointer;
@@ -165,7 +169,8 @@ textarea {
   padding: $space-xs $space-2;
 }
 
-.input, .textarea {
+.input,
+.textarea {
   width: 100%;
   background: #0b0f16;
   border: 1px solid var(--border);
@@ -199,25 +204,25 @@ textarea {
 
 /* Column overlays: full-height tracks aligned to columns, non-interactive */
 .column-overlays {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    gap: $space-md;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: $space-md;
+  pointer-events: none;
+  z-index: 2;
+
+  .overlay-segment {
+    width: $col-width;
+    min-width: $col-width;
+    height: 100%;
     pointer-events: none;
-    z-index: 2;
+  }
 
-    .overlay-segment {
-        width: $col-width;
-        min-width: $col-width;
-        height: 100%;
-        pointer-events: none;
-    }
-
-    .overlay-spacer {
-        flex: 1 1 auto;
-        height: 100%;
-        pointer-events: none;
-    }
+  .overlay-spacer {
+    flex: 1 1 auto;
+    height: 100%;
+    pointer-events: none;
+  }
 }
 
 .footer {
@@ -230,8 +235,8 @@ textarea {
 
 // Topbar menu
 .menu {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: $panel-50;
+  border: 1px solid $border-50;
   border-radius: $radius;
   padding: $space-xs;
   min-width: 12rem;
