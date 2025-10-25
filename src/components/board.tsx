@@ -32,8 +32,15 @@ const smartCollision: CollisionDetection = (args) => {
   return basePointerWithin(args);
 };
 
+type ColShape = { id: string; title: string; cardIds: string[] };
+type CardShape = { id: string; title: string; description?: string };
+
 const Board: React.FC = () => {
   const { columnOrder, columns, cards, moveCard, moveColumn, addColumn } = useBoard();
+
+  // Helper typed views to satisfy TS
+  const cols = columns as Record<string, ColShape>;
+  const cardsMap = cards as Record<string, CardShape>;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -73,11 +80,13 @@ const Board: React.FC = () => {
     const a = e.active.data.current as { type?: string; colId?: UniqueIdentifier; cardId?: UniqueIdentifier; columnId?: UniqueIdentifier };
     if (a?.type === "column") setActiveColId(String(a.colId ?? e.active.id));
     if (a?.type === "card") setActiveCardId(String(a.cardId ?? e.active.id));
+    lastHoverRef.current = null;
   }
 
   function onDragCancel() {
     setActiveColId(null);
     setActiveCardId(null);
+    lastHoverRef.current = null;
   }
 
   // Column reordering with overlays + half-threshold
@@ -123,13 +132,91 @@ const Board: React.FC = () => {
     reorderByHalfThreshold(e);
   }
 
-  function onDragOver(_: DragOverEvent) {
-    // Columns keep reordering on move via overlay; cards do nothing on hover
+  // Keep last hover to avoid redundant moves
+  const lastHoverRef = useRef<{ cardId: string; toColId: string; insertAt: number } | null>(null);
+
+  function handleCardHover(e: DragOverEvent | DragMoveEvent) {
+    const active = e.active;
+    const over = e.over;
+    if (!over || !active) return;
+
+    const a = active.data.current as {
+      type?: string;
+      cardId?: UniqueIdentifier;
+      columnId?: UniqueIdentifier;
+    } | undefined;
+    if (!a || a.type !== "card") return;
+
+    const cardId = String(a.cardId ?? active.id);
+    if (!cardId) return;
+
+    const o = over.data?.current as {
+      type?: string;
+      cardId?: UniqueIdentifier;
+      columnId?: UniqueIdentifier;
+      index?: number;
+      colId?: UniqueIdentifier;
+    } | undefined;
+
+    let toColId: string | undefined;
+    let insertAt: number = Number.MAX_SAFE_INTEGER;
+
+    if (o?.type === "card") {
+      toColId = String(o.columnId ?? over.id);
+      const targetCardId = String(o.cardId ?? over.id);
+      if (!toColId || !targetCardId) return;
+      const toCol = cols[toColId];
+      if (!toCol) return;
+      const targetIdx = toCol.cardIds.indexOf(targetCardId);
+      insertAt = targetIdx >= 0 ? targetIdx : toCol.cardIds.length;
+
+      // If moving within same column and the target index is after the current index,
+      // removing the dragged card will shift indexes, so decrement insertAt by 1.
+      const currentColEntry = (Object.values(cols) as ColShape[]).find((c) => c.cardIds.includes(cardId));
+      const currentColId = currentColEntry?.id;
+      const currentIndex = currentColEntry ? currentColEntry.cardIds.indexOf(cardId) : -1;
+      if (currentColId === toColId && currentIndex >= 0 && insertAt > currentIndex) {
+        insertAt = insertAt - 1;
+      }
+    } else if (o?.type === "column") {
+      toColId = String(o.colId ?? over.id);
+      insertAt = Number.MAX_SAFE_INTEGER;
+    } else if (o?.type === "overlay") {
+      const idx = Number(o.index ?? String(over.id).replace(/^ov-/, ""));
+      const toIdx = Math.min(idx, columnOrder.length - 1);
+      toColId = columnOrder[toIdx];
+      insertAt = Number.MAX_SAFE_INTEGER;
+    } else {
+      return;
+    }
+
+    if (!toColId) return;
+
+    const last = lastHoverRef.current;
+    if (last && last.cardId === cardId && last.toColId === toColId && last.insertAt === insertAt) {
+      return; // already moved to this position
+    }
+
+    // perform move so dragged element appears within target column while dragging
+    moveCard(cardId, toColId, insertAt);
+    lastHoverRef.current = { cardId, toColId, insertAt };
+  }
+
+  function onDragOver(e: DragOverEvent) {
+    // Columns keep reordering on move via overlay; for cards, move on hover so they appear
+    // in the destination column while dragging (enables visual reordering inside target column).
+    try {
+      handleCardHover(e);
+    } catch (err) {
+      // swallow errors during hover handling to avoid breaking DnD
+      // console.error(err);
+    }
   }
 
   function onDragEnd(e: DragEndEvent) {
     setActiveColId(null);
     setActiveCardId(null);
+    lastHoverRef.current = null;
     // Columns final placement if needed
     reorderByHalfThreshold(e);
 
@@ -157,8 +244,8 @@ const Board: React.FC = () => {
       const toColId = String(o.columnId ?? e.over.id);
       const targetCardId = String(o.cardId ?? e.over.id);
       if (!toColId || !targetCardId) return;
-      const targetIdx = columns[toColId].cardIds.indexOf(targetCardId);
-      const insertAt = targetIdx >= 0 ? targetIdx : columns[toColId].cardIds.length;
+      const targetIdx = cols[toColId].cardIds.indexOf(targetCardId);
+      const insertAt = targetIdx >= 0 ? targetIdx : cols[toColId].cardIds.length;
       moveCard(cardId, toColId, insertAt);
       return;
     }
@@ -186,9 +273,9 @@ const Board: React.FC = () => {
   const activeCard = useMemo(() => {
     if (!activeCardId) return null;
     // find columnId for this card
-    const colEntry = Object.values(columns).find((c) => c.cardIds.includes(activeCardId!));
+    const colEntry = (Object.values(cols) as ColShape[]).find((c) => c.cardIds.includes(activeCardId!));
     const colId = colEntry?.id ?? ("" as string);
-    const data = cards[activeCardId];
+    const data = cardsMap[activeCardId];
     if (!data) return null;
     return <CardItem id={activeCardId} data={data} columnId={colId} />;
   }, [activeCardId, columns, cards]);
