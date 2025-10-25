@@ -109,32 +109,33 @@ textarea {
 }
 
 .column .list {
-    padding: $space-2;
-    display: flex;
-    flex-direction: column;
-    gap: $space-2;
-    overflow: auto;
+  padding: $space-2;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  overflow: auto;
 }
 
 .add-column {
-    min-width: $col-width;
-    width: $col-width;
-    height: 3rem;
-    align-self: flex-start;
-    background: transparent;
-    border: 1px dashed var(--border);
-    border-radius: $radius;
-    color: var(--muted);
-    cursor: pointer;
-    justify-content: center;
+  min-width: $col-width;
+  width: $col-width;
+  height: 3rem;
+  align-self: flex-start;
+  background: rgba(0, 0, 0, 0.5); // semi-transparent white
+  //border: 1px dashed var(--border);
+  border:none;
+  border-radius: $radius;
+  color: #fff;
+  cursor: pointer;
+  justify-content: center;
 }
 
 .card {
-    background: #11141a;
-    border: 1px solid var(--border);
-    border-radius: $radius;
-    padding: $space-2;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  background: #11141a;
+  border: 1px solid var(--border);
+  border-radius: $radius;
+  padding: $space-2;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
 }
 
 .card-title {
@@ -164,8 +165,7 @@ textarea {
   padding: $space-xs $space-2;
 }
 
-.input,
-.textarea {
+.input, .textarea {
   width: 100%;
   background: #0b0f16;
   border: 1px solid var(--border);
@@ -199,25 +199,25 @@ textarea {
 
 /* Column overlays: full-height tracks aligned to columns, non-interactive */
 .column-overlays {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  gap: $space-md;
-  pointer-events: none;
-  z-index: 2;
-}
+    position: absolute;
+    inset: 0;
+    display: flex;
+    gap: $space-md;
+    pointer-events: none;
+    z-index: 2;
 
-.column-overlays .overlay-segment {
-  width: $col-width;
-  min-width: $col-width;
-  height: 100%;
-  pointer-events: none;
-}
+    .overlay-segment {
+        width: $col-width;
+        min-width: $col-width;
+        height: 100%;
+        pointer-events: none;
+    }
 
-.column-overlays .overlay-spacer {
-  flex: 1 1 auto;
-  height: 100%;
-  pointer-events: none;
+    .overlay-spacer {
+        flex: 1 1 auto;
+        height: 100%;
+        pointer-events: none;
+    }
 }
 
 .footer {

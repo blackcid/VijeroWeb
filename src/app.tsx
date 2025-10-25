@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Board from "./components/board";
 import { useBoard } from "./store";
 
@@ -11,6 +11,28 @@ export default function App() {
         if (url !== null) setBackground(url.trim() || undefined);
         setMenuOpen(false);
     }
+
+    // Apply background to the whole window (body)
+    useEffect(() => {
+        if (backgroundUrl) {
+            document.body.style.backgroundImage = `url(${backgroundUrl})`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundRepeat = "no-repeat";
+            document.body.style.backgroundPosition = "center";
+        } else {
+            document.body.style.backgroundImage = "";
+            document.body.style.backgroundSize = "";
+            document.body.style.backgroundRepeat = "";
+            document.body.style.backgroundPosition = "";
+        }
+        return () => {
+            // cleanup if component unmounts
+            document.body.style.backgroundImage = "";
+            document.body.style.backgroundSize = "";
+            document.body.style.backgroundRepeat = "";
+            document.body.style.backgroundPosition = "";
+        };
+    }, [backgroundUrl]);
 
     return (
         <div className="app">
@@ -27,16 +49,7 @@ export default function App() {
                     )}
                 </div>
             </header>
-            <div
-                className="content"
-                style={{
-                    backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
-                    backgroundSize: backgroundUrl ? "cover" : undefined,
-                    backgroundRepeat: backgroundUrl ? "no-repeat" : undefined,
-                    backgroundPosition: backgroundUrl ? "center" : undefined,
-                    borderRadius: backgroundUrl ? undefined : undefined,
-                }}
-            >
+            <div className="content">
                 <Board />
             </div>
             <div className="footer">Estado persistido en localStorage</div>
