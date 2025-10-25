@@ -30,13 +30,15 @@ export const Column: React.FC<Props> = ({ id }) => {
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
         transition,
-        flex: "0 0 auto",
-        visibility: isDragging ? "hidden" : undefined,
     };
 
     return (
-        <div className="column" ref={setNodeRef} style={style}>
-            <header {...listeners} {...attributes} style={{ cursor: "grab" }}>
+        <div
+            className={`column${isDragging ? " is-dragging" : ""}`}
+            ref={setNodeRef}
+            style={style}
+        >
+            <header {...listeners} {...attributes}>
                 <input
                     className="input"
                     value={title}

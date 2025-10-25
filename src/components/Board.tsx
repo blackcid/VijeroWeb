@@ -29,7 +29,7 @@ const overlayFirst: CollisionDetection = (args) => {
 };
 
 const Board: React.FC = () => {
-    const { columnOrder, moveCard, moveColumn } = useBoard();
+    const { columnOrder, moveCard, moveColumn, addColumn } = useBoard();
 
     // Sensors
     const sensors = useSensors(
@@ -170,6 +170,12 @@ const Board: React.FC = () => {
                     {columnOrder.map((cid) => (
                         <Column key={cid} id={cid} index={0} />
                     ))}
+                    <button
+                        className="column add-column"
+                        onClick={() => addColumn("Nueva columna")}
+                    >
+                        + Add column
+                    </button>
                 </div>
             </SortableContext>
             <DragOverlay adjustScale={false}>{activeColumn}</DragOverlay>
