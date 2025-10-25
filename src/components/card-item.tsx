@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { useDraggable } from "@dnd-kit/core";
 import type { Card, Id } from "../types";
-import { useBoard } from "../store";
 
 export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
     id,
@@ -9,9 +8,7 @@ export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
 }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
         useDraggable({ id, data: { type: "card", cardId: id } });
-    const { updateCard, removeCard } = useBoard();
-    const [editing, setEditing] = useState(false);
-    const [title, setTitle] = useState(data.title);
+
     const style: React.CSSProperties = transform
         ? {
               transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
@@ -27,50 +24,9 @@ export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
             {...listeners}
             {...attributes}
         >
-            {editing ? (
-                <div>
-                    <input
-                        className="input"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                    />
-                    <div className="card-actions">
-                        <button
-                            className="icon-btn primary"
-                            onClick={() => {
-                                updateCard(id, { title });
-                                setEditing(false);
-                            }}
-                        >
-                            Save
-                        </button>
-                        <button
-                            className="icon-btn"
-                            onClick={() => setEditing(false)}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <div>
-                    <h4 className="card-title">{data.title}</h4>
-                    <div className="card-actions">
-                        <button
-                            className="text-button"
-                            onClick={() => setEditing(true)}
-                        >
-                            Edit
-                        </button>
-                        <button
-                            className="text-button"
-                            onClick={() => removeCard(id)}
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            )}
+            <div>
+                <h4 className="card-title">{data.title}</h4>
+            </div>
         </div>
     );
 };
