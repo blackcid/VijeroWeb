@@ -42,13 +42,13 @@ export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
                                 setEditing(false);
                             }}
                         >
-                            Guardar
+                            Save
                         </button>
                         <button
                             className="icon-btn"
                             onClick={() => setEditing(false)}
                         >
-                            Cancelar
+                            Cancel
                         </button>
                     </div>
                 </div>
@@ -60,13 +60,13 @@ export const CardItem: React.FC<{ id: Id; data: Card; columnId: Id }> = ({
                             className="text-button"
                             onClick={() => setEditing(true)}
                         >
-                            Editar
+                            Edit
                         </button>
                         <button
                             className="text-button"
                             onClick={() => removeCard(id)}
                         >
-                            Eliminar
+                            Delete
                         </button>
                     </div>
                 </div>

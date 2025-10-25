@@ -10,13 +10,13 @@ import {
     useSensors,
 } from "@dnd-kit/core";
 import { useBoard } from "./store";
-import { Column } from "./components/Column";
+import { Column } from "./components/column/column";
 
 const LOG_PREFIX = "[KANBAN-DND]";
 
-/* En esta versi贸n, la l贸gica de reordenaci贸n por el movimiento del rat贸n (reorderColumnsByMouse) se eval煤a continuamente
-   mientras se mueve el rat贸n, no s贸lo cuando cambia el "over" o en el drop. Esto se logra a帽adiendo el evento onDragMove
-   que reutiliza la misma funci贸n de umbral.
+/* En esta versi髇, la l骻ica de reordenaci髇 por el movimiento del rat髇 (reorderColumnsByMouse) se eval鷄 continuamente
+   mientras se mueve el rat髇, no s髄o cuando cambia el "over" o en el drop. Esto se logra a馻diendo el evento onDragMove
+   que reutiliza la misma funci髇 de umbral.
 */
 
 export default function App() {
@@ -25,7 +25,7 @@ export default function App() {
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
-    // Posici贸n X del rat贸n (cliente) para umbral de mitad
+    // Posici髇 X del rat髇 (cliente) para umbral de mitad
     const mouseXRef = useRef<number>(0);
     useEffect(() => {
         const onMove = (e: PointerEvent | MouseEvent) => {
@@ -114,7 +114,7 @@ export default function App() {
         const a = active.data?.current as any;
         const o = over.data?.current as any;
 
-        // Reordenar columnas SOLO cuando el RAT脫N cruza la mitad de la columna destino
+        // Reordenar columnas SOLO cuando el RAT覰 cruza la mitad de la columna destino
         if (a?.type === "column" && o?.type === "column") {
             reorderColumnsByMouse(e, "hover");
             return;
@@ -139,7 +139,7 @@ export default function App() {
         const o = over.data?.current as any;
 
         if (a?.type === "column" && o?.type === "column") {
-            // Misma l贸gica que en onDragOver para consistencia
+            // Misma l骻ica que en onDragOver para consistencia
             reorderColumnsByMouse(e, "drop");
             return;
         }
