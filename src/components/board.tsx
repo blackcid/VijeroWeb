@@ -163,23 +163,26 @@ const Board: React.FC = () => {
 
     let toColId: string | undefined;
     let insertAt: number = Number.MAX_SAFE_INTEGER;
-
+    // Where is the dragged card currently?
+    const currentColEntry = (Object.values(cols) as ColShape[]).find((c) => c.cardIds.includes(cardId));
+    const currentColId = currentColEntry?.id;
     if (o?.type === "card") {
       toColId = String(o.columnId ?? over.id);
       const targetCardId = String(o.cardId ?? over.id);
       if (!toColId || !targetCardId) return;
       const toCol = cols[toColId];
       if (!toCol) return;
-      const targetIdx = toCol.cardIds.indexOf(targetCardId);
-      insertAt = targetIdx >= 0 ? targetIdx : toCol.cardIds.length;
-
-      // If moving within same column and the target index is after the current index,
-      // removing the dragged card will shift indexes, so decrement insertAt by 1.
-      const currentColEntry = (Object.values(cols) as ColShape[]).find((c) => c.cardIds.includes(cardId));
-      const currentColId = currentColEntry?.id;
-      const currentIndex = currentColEntry ? currentColEntry.cardIds.indexOf(cardId) : -1;
-      if (currentColId === toColId && currentIndex >= 0 && insertAt > currentIndex) {
-        insertAt = insertAt - 1;
+      if (currentColId && currentColId !== toColId) {
+        // First time entering another column by hovering a card: just move to that column (append)
+        insertAt = Number.MAX_SAFE_INTEGER;
+      } else {
+        // Already in this column: precise reordering before the target card
+        const targetIdx = toCol.cardIds.indexOf(targetCardId);
+        insertAt = targetIdx >= 0 ? targetIdx : toCol.cardIds.length;
+        const currentIndex = currentColEntry ? currentColEntry.cardIds.indexOf(cardId) : -1;
+        if (currentColId === toColId && currentIndex >= 0 && insertAt > currentIndex) {
+          insertAt = insertAt - 1;
+        }
       }
     } else if (o?.type === "column") {
       toColId = String(o.colId ?? over.id);
