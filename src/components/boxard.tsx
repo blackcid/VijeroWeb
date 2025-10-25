@@ -4,11 +4,13 @@ import {
     DragEndEvent,
     DragOverEvent,
     DragMoveEvent,
+    DragStartEvent,
     PointerSensor,
     useSensor,
     useSensors,
     DragOverlay,
     pointerWithin as basePointerWithin,
+    DroppableContainer,
 } from "@dnd-kit/core";
 import type { CollisionDetection } from "@dnd-kit/core";
 import {
@@ -18,11 +20,12 @@ import {
 import { useBoard } from "../store";
 import { Column } from "./column/column";
 import { OverlayRail } from "./column/overlay-rail";
+import type { UniqueIdentifier } from "@dnd-kit/core";
 
 // Collision detection that prefers overlay droppables when present
 const overlayFirst: CollisionDetection = (args) => {
     const overlays = args.droppableContainers.filter(
-        (c) => (c.data as any)?.current?.type === "overlay"
+        (c: DroppableContainer) => c.data?.current?.type === "overlay"
     );
     const useSet = overlays.length ? overlays : args.droppableContainers;
     return basePointerWithin({ ...args, droppableContainers: useSet });
@@ -39,37 +42,38 @@ const Board: React.FC = () => {
     // Track mouse X for half-threshold comparisons
     const mouseXRef = useRef<number>(0);
     useEffect(() => {
-        const onMove = (e: PointerEvent | MouseEvent) => {
-            mouseXRef.current =
-                (e as PointerEvent).clientX ?? (e as MouseEvent).clientX;
+        const onPointerMove = (e: PointerEvent) => {
+            mouseXRef.current = e.clientX;
         };
-        window.addEventListener("pointermove", onMove as any, {
-            passive: true,
-        });
-        window.addEventListener("mousemove", onMove as any, { passive: true });
+        const onMouseMove = (e: MouseEvent) => {
+            mouseXRef.current = e.clientX;
+        };
+        window.addEventListener("pointermove", onPointerMove, { passive: true });
+        window.addEventListener("mousemove", onMouseMove, { passive: true });
         return () => {
-            window.removeEventListener("pointermove", onMove as any);
-            window.removeEventListener("mousemove", onMove as any);
+            window.removeEventListener("pointermove", onPointerMove);
+            window.removeEventListener("mousemove", onMouseMove);
         };
     }, []);
 
     function getHalfXFromOver(
         e: DragOverEvent | DragEndEvent | DragMoveEvent
     ): number | null {
-        const over: any = (e as any).over as any;
-        if (!over?.rect) return null;
-        const { left, width } = over.rect as any; // client coords
-        if (left == null || width == null) return null;
+        const over = e.over;
+        if (!over) return null;
+        const { left, width } = over.rect;
         return left + width / 2;
     }
 
     // Active column overlay
     const [activeColId, setActiveColId] = React.useState<string | null>(null);
 
-    function onDragStart(e: any) {
-        const a = e.active?.data?.current as any;
-        if (a?.type === "column")
-            setActiveColId(String(a.colId ?? e.active.id));
+    function onDragStart(e: DragStartEvent) {
+        const a = e.active.data.current as {
+            type?: string;
+            colId?: UniqueIdentifier;
+        };
+        if (a?.type === "column") setActiveColId(String(a.colId ?? e.active.id));
     }
 
     function onDragCancel() {
@@ -80,21 +84,28 @@ const Board: React.FC = () => {
     function reorderByHalfThreshold(
         e: DragMoveEvent | DragOverEvent | DragEndEvent
     ) {
-        const { active, over } = e as any;
+        const active = e.active;
+        const over = e.over;
         if (!over) return;
-        const a = active.data?.current as any;
-        const o = over.data?.current as any;
+        const a = active.data.current as {
+            type?: string;
+            colId?: UniqueIdentifier;
+        };
+        const o = over.data?.current as {
+            type?: string;
+            index?: number;
+            colId?: UniqueIdentifier;
+        };
         if (!(a?.type === "column" && o?.type === "overlay")) return; // only overlays trigger reorder
 
-        const dragId = String(
-            a.colId ?? String(active.id).replace(/^col-/, "")
-        );
+        const dragId = String(a.colId ?? active.id);
         const currentIndex = columnOrder.indexOf(dragId);
         if (!dragId || currentIndex === -1) return;
 
-        const targetIndex = Number(
-            o.index ?? String(over.id).replace(/^ov-/, "")
-        );
+        const targetIndex =
+            typeof o.index === "number"
+                ? o.index
+                : Number(String(over.id).replace(/^ov-/, ""));
         if (Number.isNaN(targetIndex) || targetIndex < 0) return;
 
         const half = getHalfXFromOver(e);
@@ -128,13 +139,17 @@ const Board: React.FC = () => {
 
     function onDragOver(e: DragOverEvent) {
         reorderByHalfThreshold(e);
-        const { active, over } = e;
-        if (!over) return;
-        const a = active.data?.current as any;
-        const o = over.data?.current as any;
+        const a = e.active.data.current as {
+            type?: string;
+            cardId?: UniqueIdentifier;
+        };
+        const o = e.over?.data?.current as {
+            type?: string;
+            colId?: UniqueIdentifier;
+        };
         if (a?.type === "card" && o?.type === "column") {
-            const cardId = String(a.cardId ?? active.id);
-            const overId = String(o.colId ?? over.id);
+            const cardId = String(a.cardId ?? e.active.id);
+            const overId = String(o.colId ?? e.over!.id);
             if (cardId && overId)
                 moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
         }
@@ -148,7 +163,6 @@ const Board: React.FC = () => {
     const activeColumn = useMemo(() => {
         if (!activeColId) return null;
         return <Column id={activeColId} index={0} />;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeColId]);
 
     return (

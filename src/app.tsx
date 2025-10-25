@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import Board from "./components/board";
 import { useBoard } from "./store";
 
@@ -40,7 +40,7 @@ export default function App() {
                 <span className="title">Viajero Kanban</span>
                 <div style={{ marginLeft: "auto", position: "relative" }}>
                     <button className="icon-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Menu">
-                        ?
+                        ⋯
                     </button>
                     {menuOpen && (
                         <div className="menu" style={{ position: "absolute", right: 0, top: "100%" }}>

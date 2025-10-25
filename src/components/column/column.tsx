@@ -26,7 +26,7 @@ export const Column: React.FC<Props> = ({ id }) => {
         id,
         data: { type: "column", colId: id },
         transition: {
-            duration:600, // ms
+            duration: 600,
             easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
         },
     });
