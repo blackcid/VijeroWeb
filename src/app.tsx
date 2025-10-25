@@ -1,6 +1,8 @@
 ﻿import React, { useEffect, useState } from "react";
 import Board from "./components/board";
 import { useBoard } from "./store";
+import Button from "./components/ui/button";
+import Menu from "./components/ui/menu";
 
 export default function App() {
     const { backgroundUrl, setBackground } = useBoard();
@@ -38,14 +40,14 @@ export default function App() {
         <div className="app">
             <header className="header">
                 <span className="title">Viajero Kanban</span>
-                <div style={{ marginLeft: "auto", position: "relative" }}>
-                    <button className="icon-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Menu">
-                        ⋯
-                    </button>
+                <div className="menu-container">
+                    <Button variant="icon" className="icon-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Menu">
+                        ...
+                    </Button>
                     {menuOpen && (
-                        <div className="menu" style={{ position: "absolute", right: 0, top: "100%" }}>
-                            <button className="text-button" onClick={onChangeBackground}>Change background</button>
-                        </div>
+                        <Menu className="menu-popover">
+                            <Button variant="text" className="text-button" onClick={onChangeBackground}>Change background</Button>
+                        </Menu>
                     )}
                 </div>
             </header>

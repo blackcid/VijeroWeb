@@ -271,6 +271,32 @@ button, input, textarea {
     }
 }
 
-
 // Make the original card invisible while dragging (overlay shows the clone)
 .card.is-dragging { visibility: hidden; }
+
+/* UI primitives */
+.btn {
+  font: inherit;
+  border-radius: $radius;
+  padding: $space-xs $space-sm;
+  border: 0;
+  cursor: pointer;
+}
+.btn-default {
+  background: #0d1117;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-icon {
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+}
+.btn-text {
+  background: transparent;
+  color: var(--muted);
+}
+
+.menu-container { position: relative; display: inline-block; margin-left: auto; }
+.menu-popover { position: absolute; right: 0; top: 100%; }
+
+.ui-menu { background: $panel-50; border-radius: $radius; padding: $space-xs; min-width: 12rem; }
