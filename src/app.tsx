@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
     DndContext,
     DragEndEvent,
@@ -24,64 +24,100 @@ export default function App() {
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
+    // Track mouse X for half-threshold comparisons
+    const mouseXRef = useRef<number>(0);
+    useEffect(() => {
+        const onMove = (e: PointerEvent | MouseEvent) => {
+            mouseXRef.current =
+                (e as PointerEvent).clientX ?? (e as MouseEvent).clientX;
+        };
+        window.addEventListener("pointermove", onMove as any, { passive: true });
+        window.addEventListener("mousemove", onMove as any, { passive: true });
+        return () => {
+            window.removeEventListener("pointermove", onMove as any);
+            window.removeEventListener("mousemove", onMove as any);
+        };
+    }, []);
+
+    function getHalfXFromOver(
+        e: DragOverEvent | DragEndEvent | DragMoveEvent
+    ): number | null {
+        const over: any = (e as any).over as any;
+        if (!over?.rect) return null;
+        const { left, width } = over.rect as any; // client coords
+        if (left == null || width == null) return null;
+        return left + width / 2;
+    }
+
     const [activeColId, setActiveColId] = React.useState<string | null>(null);
 
     function onDragStart(e: any) {
         const a = e.active?.data?.current as any;
-        if (a?.type === "column")
-            setActiveColId(String(a.colId ?? e.active.id));
+        if (a?.type === "column") setActiveColId(String(a.colId ?? e.active.id));
     }
 
     function onDragCancel() {
         setActiveColId(null);
     }
 
-    function handleColumnReorderViaOverlay(
+    function reorderByHalfThreshold(
         e: DragMoveEvent | DragOverEvent | DragEndEvent
     ) {
         const { active, over } = e as any;
         if (!over) return;
         const a = active.data?.current as any;
         const o = over.data?.current as any;
-        if (!(a?.type === "column" && o?.type === "overlay")) return;
+        // Accept overlay or column as target; prefer overlay semantics
+        const isOverlay = o?.type === "overlay";
+        const isColumnTarget = o?.type === "column";
+        if (!(a?.type === "column" && (isOverlay || isColumnTarget))) return;
 
-        const dragId = String(
-            a.colId ?? String(active.id).replace(/^col-/, "")
-        );
-        const overIndex = Number(
-            o.index ?? String(over.id).replace(/^ov-/, "")
-        );
-        if (!dragId || Number.isNaN(overIndex)) return;
-
+        const dragId = String(a.colId ?? String(active.id).replace(/^col-/, ""));
         const currentIndex = columnOrder.indexOf(dragId);
-        if (currentIndex === -1) return;
+        if (!dragId || currentIndex === -1) return;
 
-        // overIndex points to the rail segment boundary: place before index for left boundary,
-        // for rightmost spacer, place after the last column
-        if (overIndex >= columnOrder.length) {
-            const lastId = columnOrder[columnOrder.length - 1];
-            if (dragId !== lastId) moveColumn(dragId, lastId, "after");
+        // Determine target index and half from the "over"
+        let targetIndex: number;
+        if (isOverlay) {
+            targetIndex = Number(o.index ?? String(over.id).replace(/^ov-/, ""));
+        } else {
+            // column target: map to its index
+            const overId = String(o.colId ?? over.id);
+            targetIndex = columnOrder.indexOf(overId);
+        }
+        if (Number.isNaN(targetIndex) || targetIndex < 0) return;
+
+        const half = getHalfXFromOver(e);
+        const mouseX = mouseXRef.current;
+        if (half == null || mouseX == null) return;
+
+        if (isOverlay && targetIndex >= columnOrder.length) {
+            // Spacer overlay at the end: move to last only after crossing its half
+            if (currentIndex !== columnOrder.length - 1 && mouseX > half) {
+                const lastId = columnOrder[columnOrder.length - 1];
+                if (lastId) moveColumn(dragId, lastId, "after");
+            }
             return;
         }
 
-        const targetId = columnOrder[overIndex];
+        const targetId = columnOrder[targetIndex];
         if (!targetId) return;
 
-        if (currentIndex < overIndex) {
-            // moving right: only after crossing into segment overIndex
-            moveColumn(dragId, targetId, "after");
-        } else if (currentIndex > overIndex) {
-            // moving left: place before segment overIndex
-            moveColumn(dragId, targetId, "before");
+        if (currentIndex < targetIndex) {
+            // Moving right: only after cursor crosses target half
+            if (mouseX > half) moveColumn(dragId, targetId, "after");
+        } else if (currentIndex > targetIndex) {
+            // Moving left: only before target half
+            if (mouseX < half) moveColumn(dragId, targetId, "before");
         }
     }
 
     function onDragMove(e: DragMoveEvent) {
-        handleColumnReorderViaOverlay(e);
+        reorderByHalfThreshold(e);
     }
 
     function onDragOver(e: DragOverEvent) {
-        handleColumnReorderViaOverlay(e);
+        reorderByHalfThreshold(e);
         const { active, over } = e;
         if (!over) return;
         const a = active.data?.current as any;
@@ -89,15 +125,13 @@ export default function App() {
         if (a?.type === "card" && o?.type === "column") {
             const cardId = String(a.cardId ?? active.id);
             const overId = String(o.colId ?? over.id);
-            if (cardId && overId) {
-                moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
-            }
+            if (cardId && overId) moveCard(cardId, overId, Number.MAX_SAFE_INTEGER);
         }
     }
 
     function onDragEnd(e: DragEndEvent) {
         setActiveColId(null);
-        handleColumnReorderViaOverlay(e);
+        reorderByHalfThreshold(e);
     }
 
     const activeColumn = useMemo(() => {
@@ -121,13 +155,11 @@ export default function App() {
                 collisionDetection={pointerWithin}
                 onDragStart={onDragStart}
                 onDragCancel={onDragCancel}
+                onDragMove={onDragMove}
                 onDragOver={onDragOver}
                 onDragEnd={onDragEnd}
             >
-                <SortableContext
-                    items={columnOrder}
-                    strategy={horizontalListSortingStrategy}
-                >
+                <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
                     <div className="columns">
                         <OverlayRail />
                         {columnOrder.map((cid) => (
