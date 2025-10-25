@@ -23,14 +23,14 @@ export const Column: React.FC<Props> = ({ id }) => {
         isDragging: colDragging,
     } = useDraggable({ id: `col-${id}`, data: { type: "column", colId: id } });
 
-    // Droppable container; disabled while this column is being dragged
+    // Droppable on the same element; disabled while this column is being dragged
     const { setNodeRef: setDropRef } = useDroppable({
         id,
         data: { type: "column", colId: id },
         disabled: colDragging,
     });
 
-    // Merge refs onto the outer full-height container
+    // Merge refs so the same element is draggable and droppable
     const mergedRef = (el: HTMLElement | null) => {
         setDropRef(el);
         setDragRef(el as any);
@@ -44,35 +44,32 @@ export const Column: React.FC<Props> = ({ id }) => {
 
     return (
         <div
-            className="column-container"
+            className="column"
             ref={mergedRef}
             style={{
                 ...(dragStyle || {}),
                 ...(colDragging ? { opacity: 0.6 } : {}),
-                height: "100%", // ensure the hit area spans full vertical space
             }}
         >
-            <div className="column">
-                <header
-                    {...dragListeners}
-                    {...dragAttrs}
-                    style={{ cursor: "grab" }}
+            <header
+                {...dragListeners}
+                {...dragAttrs}
+                style={{ cursor: "grab" }}
+            >
+                <input
+                    className="input"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onBlur={() => renameColumn(id, title)}
+                />
+                <button
+                    className="text-button"
+                    onClick={() => removeColumn(id)}
                 >
-                    <input
-                        className="input"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        onBlur={() => renameColumn(id, title)}
-                    />
-                    <button
-                        className="text-button"
-                        onClick={() => removeColumn(id)}
-                    >
-                        ✕
-                    </button>
-                </header>
-                <ColumnContent id={id} />
-            </div>
+                    ✕
+                </button>
+            </header>
+            <ColumnContent id={id} />
         </div>
     );
 };
