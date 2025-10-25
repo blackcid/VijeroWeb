@@ -96,21 +96,22 @@ const creator: StateCreator<BoardStore> = (set, get) => ({
         }),
     moveCard: (cardId: Id, toColumnId: Id, index: number) =>
         set((s) => {
-            const fromEntry = Object.values(s.columns).find((c) =>
-                (c as Column).cardIds.includes(cardId)
-            ) as Column | undefined;
-            if (!fromEntry) return s;
-            const fromId = fromEntry.id;
-            const from = s.columns[fromId];
-            const to = s.columns[toColumnId];
-            const fromIds = from.cardIds.filter((x: Id) => x !== cardId);
+            // Remove the card from ALL columns to avoid duplicates, then insert once
+            const sanitizedCols: Record<Id, Column> = Object.fromEntries(
+                Object.entries(s.columns).map(([cid, col]) => {
+                    const c = col as Column;
+                    return [cid as Id, { ...c, cardIds: c.cardIds.filter((x) => x !== cardId) }];
+                })
+            ) as Record<Id, Column>;
+
+            const to = sanitizedCols[toColumnId];
+            if (!to) return s;
             const toIds = [...to.cardIds];
             const clamped = Math.max(0, Math.min(index, toIds.length));
             toIds.splice(clamped, 0, cardId);
             return {
                 columns: {
-                    ...s.columns,
-                    [fromId]: { ...from, cardIds: fromIds },
+                    ...sanitizedCols,
                     [toColumnId]: { ...to, cardIds: toIds },
                 },
             };

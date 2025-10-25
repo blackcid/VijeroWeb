@@ -84,62 +84,57 @@ button, input, textarea {
 }
 
 .column {
-  position: relative;
-  overflow: hidden;
-  background: $glass-bg; // glass background
-  border: 1px solid $glass-border; // subtle glass border
-  border-radius: $radius;
-  min-width: $col-width;
-  width: $col-width;
-  display: flex;
-  flex-direction: column;
-  max-height: 80vh;
-  flex: 0 0 auto;
-  box-shadow: $glass-shadow;
-  backdrop-filter: blur($glass-blur) saturate(120%);
-  -webkit-backdrop-filter: blur($glass-blur) saturate(120%);
-
-  // soft highlight overlay
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.18) 0%,
-      rgba(255, 255, 255, 0.06) 40%,
-      rgba(255, 255, 255, 0.02) 100%
-    );
-    border-radius: inherit;
-    mix-blend-mode: screen;
-  }
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: $space-2 $space-sm;
-    border-bottom: none;
-    cursor: grab;
-
-    h3 {
-      margin: $space-0;
-      font-size: 0.875rem;
-    }
-  }
-
-  .list {
-    padding: $space-2;
+    position: relative;
+    overflow: hidden;
+    background: $glass-bg; // glass background
+    border: 1px solid $glass-border; // subtle glass border
+    border-radius: $radius;
+    min-width: $col-width;
+    width: $col-width;
     display: flex;
     flex-direction: column;
-    gap: $space-2;
-    overflow: auto;
-  }
-}
+    max-height: 80vh;
+    flex: 0 0 auto;
+    box-shadow: $glass-shadow;
+    backdrop-filter: blur($glass-blur) saturate(120%);
+    -webkit-backdrop-filter: blur($glass-blur) saturate(120%);
 
-.column.is-dragging {
-  visibility: hidden;
+    &.is-dragging {
+        visibility: hidden;
+    }
+
+    // soft highlight overlay
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient( 135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.02) 100% );
+        border-radius: inherit;
+        mix-blend-mode: screen;
+    }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: $space-2 $space-sm;
+        border-bottom: none;
+        cursor: grab;
+
+        h3 {
+            margin: $space-0;
+            font-size: 0.875rem;
+        }
+    }
+
+    .list {
+        padding: $space-2;
+        display: flex;
+        flex-direction: column;
+        gap: $space-2;
+        overflow: auto;
+    }
 }
 
 .add-column {
@@ -265,11 +260,17 @@ button, input, textarea {
   text-align: left;
   padding: $space-xs $space-sm;
 }
-.header .icon-btn {
-  line-height: 1;
-  width: 2rem;
-  height: 2rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.header {
+    .icon-btn {
+      line-height: 1;
+      width: 2rem;
+      height: 2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
 }
+
+
+// Make the original card invisible while dragging (overlay shows the clone)
+.card.is-dragging { visibility: hidden; }
