@@ -25,6 +25,10 @@ export const Column: React.FC<Props> = ({ id }) => {
     } = useSortable({
         id,
         data: { type: "column", colId: id },
+        transition: {
+            duration:600, // ms
+            easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        },
     });
 
     const style: React.CSSProperties = {
