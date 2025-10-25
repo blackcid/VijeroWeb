@@ -12,7 +12,9 @@ export default function App() {
                     Nueva columna
                 </button>
             </header>
-            <Board />
+            <div className="content">
+                <Board />
+            </div>
             <div className="footer">Estado persistido en localStorage</div>
         </div>
     );
